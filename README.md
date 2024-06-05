@@ -16,7 +16,7 @@ When audio engineers use Reaper audio software to design, the audio editing soft
 Therefore, audio designers must often import audio plugins from various external developers to complete necessary audio designs. 
 Thus, the application of distortion effects software is essential. <br/>
 
-![User Interface](image.jpg)
+![User Interface](image.png)
 
 ## Link for the survey
 After you use or test this plug-in, I hope you can have some time to conduct the survey. This questionnaire will not collect any personal information but only collect knowledge questions and your opinions on using this plug-in to help me improve its functions and modify its problems.<br/>
