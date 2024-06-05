@@ -1,0 +1,502 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<SKIN layer_type="layer_stack" background_image="bgblue.bmp" stretch="true" h_margin ="10" v_margin="100">
+<LAYER_STACK width="1125" height="400" margin="10">
+	<!-- Definitions -->
+	<VARIABLE id="GRAPH_COLOR" value="#FF0000"/>
+	<VARIABLE id="GRAPH_FILL_COLOR" value="#3A0088"/>
+
+	<!-- enum param for text display-->
+	<PARAM id="text_param" type="enumeration" enum_values="OFF;ON"/>
+	<PARAM_LINK from="$bypass$" to="text_param" reverse="true"/>
+
+	<!-- Controls -->
+	<PNS_PLAIN_GROUP_BOX layout_type="layer_stack" v_margin="15" h_margin="20" opacity="1" id="main_text" h_position ="0" v_position="-100" text_color="#000000">
+		<TEXT value="ON"  h_position="10" v_position="20" text_color="#000000"/>
+		<PARAM_LINK from="$bypass$" to="main_text.opacity" formula="1-.7*x"/>
+		<PNS_HSELECT_SWITCH param_id="$bypass$" width="60%" height="90%" cursor="system::hand">
+			<TOOLTIP text="Click to switch on/off"/>
+		</PNS_HSELECT_SWITCH>
+	    <TEXT value="OFF"  h_position="75" v_position="20" text_color="#000000"/>
+	</PNS_PLAIN_GROUP_BOX>
+	<!-- log scale filter curve-->
+	<TEMPLATE id="TPL_LOG_FILTER_CURVE">
+		<!-- values usde in formula and set by script -->
+		<PARAM id="$id$.kb0" min="-$_PARAM_MAX_$" max="$_PARAM_MAX_$" exposed="true" />
+		<PARAM id="$id$.kb1" min="-$_PARAM_MAX_$" max="$_PARAM_MAX_$" exposed="true" />
+		<PARAM id="$id$.kb2" min="-$_PARAM_MAX_$" max="$_PARAM_MAX_$" exposed="true" />
+		<PARAM id="$id$.ka0" min="-$_PARAM_MAX_$" max="$_PARAM_MAX_$" exposed="true" />
+		<PARAM id="$id$.ka1" min="-$_PARAM_MAX_$" max="$_PARAM_MAX_$" exposed="true" />
+		<PARAM id="$id$.ka2" min="-$_PARAM_MAX_$" max="$_PARAM_MAX_$" exposed="true" />
+		<!-- the formula -->
+		<FORMULA_CURVE id="$id$" formula="10*log(($id$.kb0+$id$.kb1*cos(x)+$id$.kb2*cos(2*x))/($id$.ka0+$id$.ka1*cos(x)+$id$.ka2*cos(2*x)))/log(10)" y_min="-20" y_max="20" x_min="0.0028" x_max="2.85"/>
+		<!-- script that defines the functions used to set curve values -->
+		<SCRIPT script="
+const double PI=3.141592653589793238462;
+/** Biquad filter class, extracted from Plug'n Scrip DSP library
+*
+*/
+namespace KittyDSP
+{
+    namespace Biquad
+    {
+        const double sqr2_2=sqrt(2.0)/2.0;
+        const double _sqrt2=1/sqrt(2.0);
+
+        class Filter
+        {
+            double  inputCoeff0=0; 				
+            double  inputCoeff1=0; 			
+            double  inputCoeff2=0; 			    												
+            double  outputCoeff1=0; 			    												
+            double  outputCoeff2=0; 			    												
+
+            void	setLowPass(double theta)
+            {
+                const double theta64=theta;
+                const double alpha= sin(theta64)*sqr2_2;
+                const double cs0=cos(theta64);
+                const double b0 =  (1 - cs0)*.5;
+                const double b1 =   1 - cs0;
+                const double b2 =  (1 - cs0)*.5;
+                const double _a0 =   1/(1 + alpha);
+                const double a1 =  -2*cs0;
+                const double a2 =   1 - alpha;
+
+                inputCoeff0=b0*_a0;
+                inputCoeff1=b1*_a0;
+                inputCoeff2=b2*_a0;
+                outputCoeff1=-a1*_a0;
+                outputCoeff2=-a2*_a0;
+            }
+
+
+            void	setHighPass(double theta)
+            {
+                const double theta64=theta;
+                const double alpha= sin(theta64)*sqr2_2;
+                const double cs0=cos(theta64);
+                const double b0 =  (1 + cs0)*.5;
+                const double b1 = -(1 + cs0);
+                const double b2 =  (1 + cs0)*.5;
+                const double _a0 =   1/(1 + alpha);
+                const double a1 =  -2*cs0;
+                const double a2 =   1 - alpha;
+
+                inputCoeff0=b0*_a0;
+                inputCoeff1=b1*_a0;
+                inputCoeff2=b2*_a0;
+                outputCoeff1=-a1*_a0;
+                outputCoeff2=-a2*_a0;
+            }
+
+
+            void	setResonantLowPass(double theta,double q /*peak value*/)
+            {
+                const double theta64=theta;
+                const double alpha= sin(theta64)/(q*2);
+                const double cs0=cos(theta64);
+                const double b0 =  (1 - cs0)*.5;
+                const double b1 =   1 - cs0;
+                const double b2 =  (1 - cs0)*.5;
+                const double _a0 =   1/(1 + alpha);
+                const double a1 =  -2*cs0;
+                const double a2 =   1 - alpha;
+
+                inputCoeff0=b0*_a0;
+                inputCoeff1=b1*_a0;
+                inputCoeff2=b2*_a0;
+                outputCoeff1=-a1*_a0;
+                outputCoeff2=-a2*_a0;
+            }
+
+
+            void	setResonantHighPass(double theta,double q /*peak value*/)
+            {
+                const double theta64=theta;
+                const double alpha= sin(theta64)/(q*2);
+                const double cs0=cos(theta64);
+                const double b0 =  (1 + cs0)*.5;
+                const double b1 = -(1 + cs0);
+                const double b2 =  (1 + cs0)*.5;
+                const double _a0 =   1/(1 + alpha);
+                const double a1 =  -2*cs0;
+                const double a2 =   1 - alpha;
+
+                inputCoeff0=b0*_a0;
+                inputCoeff1=b1*_a0;
+                inputCoeff2=b2*_a0;
+                outputCoeff1=-a1*_a0;
+                outputCoeff2=-a2*_a0;
+            }
+
+
+            void	setLowShelf(double theta,double doubleSquareRootGain)
+            {
+                const double A=doubleSquareRootGain*doubleSquareRootGain;
+                const double theta64=theta;
+                const double alpha= sin(theta64)*sqr2_2;
+                const double sqrtAx2xAlpha=2*alpha*doubleSquareRootGain;
+
+                const double cs0=cos(theta64);
+                const double b0 =    A*( (A+1) - (A-1)*cs0 + sqrtAx2xAlpha );
+                const double b1 = 2*A*( (A-1) - (A+1)*cs0                   );
+                const double b2 =    A*( (A+1) - (A-1)*cs0 - sqrtAx2xAlpha );
+                const double _a0 =    1/((A+1) + (A-1)*cs0 + sqrtAx2xAlpha);
+                const double a1 =   -2*( (A-1) + (A+1)*cs0                  );
+                const double a2 =        (A+1) + (A-1)*cs0 - sqrtAx2xAlpha;
+
+                inputCoeff0=b0*_a0;
+                inputCoeff1=b1*_a0;
+                inputCoeff2=b2*_a0;
+                outputCoeff1=-a1*_a0;
+                outputCoeff2=-a2*_a0;
+            }
+
+
+            void	setHighShelf(double theta,double doubleSquareRootGain)
+            {
+                const double A=doubleSquareRootGain*doubleSquareRootGain;
+                const double theta64=theta;
+                const double alpha= sin(theta64)*sqr2_2;
+                const double sqrtAx2xAlpha=2*alpha*doubleSquareRootGain;
+
+                const double cs0=cos(theta64);
+                const double b0 =    A*( (A+1) + (A-1)*cs0 + sqrtAx2xAlpha );
+                const double b1 = -2*A*( (A-1) + (A+1)*cs0                   );
+                const double b2 =    A*( (A+1) + (A-1)*cs0 - sqrtAx2xAlpha );
+                const double _a0 =    1/(    (A+1) - (A-1)*cs0 + sqrtAx2xAlpha);
+                const double a1 =    2*( (A-1) - (A+1)*cs0                  );
+                const double a2 =        (A+1) - (A-1)*cs0 - sqrtAx2xAlpha;
+
+                inputCoeff0=b0*_a0;
+                inputCoeff1=b1*_a0;
+                inputCoeff2=b2*_a0;
+                outputCoeff1=-a1*_a0;
+                outputCoeff2=-a2*_a0;
+            }
+
+
+            void	setPeak(double theta,double halfBwInOctava,double sqrtGain)
+            {
+                const double theta64=theta;
+                const double A=sqrtGain;
+                const double alpha= sin(theta64)*halfBwInOctava;
+                const double alphaA=alpha*A;
+                const double alpha_A=alpha/A;
+                const double b0 =   1 + alphaA;
+                const double b1 =  -2*cos(theta64);
+                const double b2 =   1 - alphaA;
+                const double _a0 =   1.0/(1.0 + alpha_A);
+                const double a2 =   1 - alpha_A;
+
+                inputCoeff0=b0*_a0;
+                inputCoeff1=b1*_a0;
+                inputCoeff2=b2*_a0;
+                outputCoeff1=-inputCoeff1;
+                outputCoeff2=-a2*_a0;
+            }
+
+            void	setBandPass(double theta,double halfBwInOctava)
+            {
+                const double theta64=theta;
+                const double alpha= sin(theta64)*halfBwInOctava;
+                const double b0 =alpha;
+                const double b2 =  -alpha;
+                const double _a0 =   1.0/(1.0 + alpha);
+                const double a1 =  -2*cos(theta64);
+                const double a2 =   1 - alpha;
+
+                inputCoeff0=b0*_a0;
+                inputCoeff1=0;
+                inputCoeff2=b2*_a0;
+                outputCoeff1=-a1*_a0;
+                outputCoeff2=-a2*_a0;
+            }
+
+            void	setNotch(double theta, double halfBwInOctava)
+            {
+                double alpha= sin(theta)*halfBwInOctava;
+                double cs0=cos(theta);
+                double b0 =1;
+                double b1 =  -2*cs0;
+                double b2 =  1;
+                double _a0 =   1.0/(1.0 + alpha);
+                double a1 =  -2*cs0;
+                double a2 =   1 - alpha;
+
+                inputCoeff0=b0*_a0;
+                inputCoeff1=b1*_a0;
+                inputCoeff2=b2*_a0;
+                outputCoeff1=-a1*_a0;
+                outputCoeff2=-a2*_a0;
+            }
+
+            void	setAllPass(double theta, double Q)
+            {
+                const double theta64=theta;
+                const double alpha= sin(theta64)*.5/Q;
+                const double cs0=cos(theta64);
+                const double b0 =   1 - alpha;
+                const double b1 =  -2*cs0;
+                const double b2 =   1 + alpha;
+                const double _a0 =  1/b2;
+
+                inputCoeff0=b0*_a0;
+                inputCoeff1=b1*_a0;
+                inputCoeff2=b2*_a0;
+                outputCoeff1=-inputCoeff1;
+                outputCoeff2=-inputCoeff0;
+            }
+        }
+    };
+}
+
+/**
+ * Helper functions to compute the response curve of the filters defined in corresponding scripts.
+ * Note that we use 41000 as the sample rate since for display purposes the actual sample rate does not matter 
+ * much, given the frequncy range in use (20 to 20k)
+ */
+/* change $id$ curve to display low pass resonant filter*/
+void $id$_setResonantLowPass(double p0,double p1)
+{
+    /*create a temp filter to compute coefficients with the same values as in the script*/
+    KittyDSP::Biquad::Filter filter;
+    double freqFactor=2*PI*20.0/44100.0;
+    double q=pow(10,(-3+p1*23.0)/20.0);
+    filter.setResonantLowPass(freqFactor*pow(1000,p0),q);
+    $id$_setFromBiquad(filter);
+}
+
+/* change $id$ curve to display a high pass resonant filter */
+void $id$_setResonantHighPass(double p0,double p1)
+{
+    /* create a temp filter to compute coefficients with the same values as in the script*/
+    KittyDSP::Biquad::Filter filter;
+    double freqFactor=2*PI*20.0/44100.0;
+    double q=pow(10,(-3+p1*23.0)/20.0);
+    filter.setResonantHighPass(freqFactor*pow(1000,p0),q);
+    $id$_setFromBiquad(filter);
+}
+
+/* change $id$ curve to display a peak filter*/
+void $id$_setPeak(double p0,double p1,double p2)
+{
+    /* create a temp filter to compute coefficients with the same values as in the script*/
+    KittyDSP::Biquad::Filter filter;
+    double freqFactor=2*PI*20.0/44100.0;
+    double bwRange=1;
+    double minBw=1.0/10.0;
+    filter.setPeak(freqFactor*pow(1000,p0),minBw+p1*bwRange,pow(10,-.5+p2));
+    $id$_setFromBiquad(filter);
+}
+
+/* change $id$ curve to display a notch filter*/
+void $id$_setNotch(double p0,double p1)
+{
+    /* create a temp filter to compute coefficients with the same values as in the script*/
+    KittyDSP::Biquad::Filter filter;
+    double freqFactor=2*PI*20.0/44100.0;
+    double minBw=1.0/10.0;
+    double bwRange=1;
+    filter.setNotch(freqFactor*pow(1000,p0),minBw+p1*bwRange);
+    $id$_setFromBiquad(filter);
+}
+
+/* generic function to set $id$ from filter coefficients*/
+void $id$_setFromBiquad(const KittyDSP::Biquad::Filter&amp; filter)
+{
+    /* store in temp variables (easier to read below)*/
+    const double b0=filter.inputCoeff0;
+    const double b1=filter.inputCoeff1;
+    const double b2=filter.inputCoeff2;
+    const double a1=-filter.outputCoeff1;
+    const double a2=-filter.outputCoeff2;
+    
+    /* copy to actual curve constants*/
+    $id$.kb0=b0*b0+b1*b1+b2*b2;
+    $id$.kb1=2*(b0*b1+b1*b2);
+    $id$.kb2=2*b0*b2;
+    $id$.ka0=1+a1*a1+a2*a2;
+    $id$.ka1=2*(a1+a1*a2);
+    $id$.ka2=2*a2;
+}
+"/>
+	</TEMPLATE>
+
+	<!-- filter curve representation: should be updated when parameters change or window is loaded -->
+	<TPL_LOG_FILTER_CURVE id="filter_curve"/>
+	<ACTION_TRIGGER event_ids="$script_input2$.value_changed;$script_input3$.value_changed;window.loaded.value_changed" script="filter_curve_setResonantHighPass($script_input2$*.01,$script_input3$*.01)" requires="$script_input2$;$script_input3$"/>
+
+	<!--The graph -->
+	<PNS_LCD_GROUP_BOX layout_type="layer_stack"  h_position="430" v_position="100">
+		<!-- grid and curves -->
+		<LAYER_STACK width="200" height="150" margin="5">
+			<GRID width="100%" height="100%" x_subdiv_count="1" y_subdiv_count="4" origin_color="#1b4358" subdiv_color="#072941" color="#0a3758" x_param_info_id="filter_curve.x_info"  y_param_info_id="filter_curve.y_info" x_positions_count="10" y_positions_count="5"/>
+			<CURVE_GRAPH width="100%" height="100%" curve_id="filter_curve" color="$GRAPH_FILL_COLOR$" graph_style="filled" opacity="30%" x_scale="log"/>
+			<CURVE_GRAPH width="100%" height="100%" curve_id="filter_curve" color="$GRAPH_COLOR$" sample_rate="2" x_scale="log" line_width="2"/>
+		</LAYER_STACK>
+		<!-- The joystick that controls both frequency and resonance -->
+		<PNS_JOYSTICK x_param_id="custom_param2" y_param_id="custom_param3" height="60%" width="100%" v_align="top" h_margin="10" v_margin="10" cursor="system::hand"/>
+	</PNS_LCD_GROUP_BOX>
+    
+    <TEXT value="Filter Curve" h_position="505" v_position="280" text_color="#FF0000"/>
+	<!-- knob controls -->
+	<PNS_FILLED_GROUP_BOX layout_type="column" v_margin="1" h_margin="1" opacity="1" id="gain_parameter" h_position="25" v_position="50">
+		<COLUMN spacing="10">
+			<REPEAT count="2" start="0" index_name="param_index">
+				<COLUMN v_align="center" spacing="3">
+					<PARAM_TEXT param_id="custom_param$param_index$" content="{name}"  width="95" font_weight="bold" fit_text="abbreviate"/>
+					<COLUMN spacing="-10">
+						<PNS_BLACK_SKIRTED_B_KNOB param_id="custom_param$param_index$" id="input_control$param_index$" h_position="0" v_position="10"/>
+						<PNS_DSP_PARAM_SETTINGS_BUTTON param_id="$script_input$param_index$$"/>
+					</COLUMN>
+					<PARAM_TEXT param_id="custom_param$param_index$" width="90"/>
+				</COLUMN>
+			</REPEAT>
+		</COLUMN>
+	</PNS_FILLED_GROUP_BOX>
+	<PNS_DASHED_GROUP_BOX layout_type="layer_stack" v_margin="10" h_margin="10" opacity="1" id="filter_paramter" h_position="430" v_position="-50">
+		<ROW spacing="10">
+			<REPEAT count="2" start="2" index_name="param_index">
+				<COLUMN v_align="center" spacing="3">
+					<PARAM_TEXT param_id="custom_param$param_index$" content="{name}"  width="95" font_weight="bold" fit_text="abbreviate"/>
+					<ROW spacing="-10">
+						<PNS_SILVER_KNOB param_id="custom_param$param_index$" id="input_control$param_index$"/>
+						<PNS_DSP_PARAM_SETTINGS_BUTTON param_id="$script_input$param_index$$"/>
+					</ROW>
+					<PARAM_TEXT param_id="custom_param$param_index$" width="90"/>
+				</COLUMN>
+			</REPEAT>
+		</ROW>
+	</PNS_DASHED_GROUP_BOX>
+    <PNS_DASHED_GROUP_BOX layout_type="layer_stack" v_margin="10" h_margin="10" opacity="1" id="filter_paramter" h_position="480" v_position="300">
+		<ROW spacing="10">
+			<REPEAT count="1" start="4" index_name="param_index">
+				<COLUMN v_align="center" spacing="3">
+					<PARAM_TEXT param_id="custom_param$param_index$" content="{name}"  width="95" font_weight="bold" fit_text="abbreviate"/>
+					<ROW spacing="-10">
+						<PNS_SILVER_KNOB param_id="custom_param$param_index$" id="input_control$param_index$"/>
+						<PNS_DSP_PARAM_SETTINGS_BUTTON param_id="$script_input$param_index$$"/>
+					</ROW>
+					<PARAM_TEXT param_id="custom_param$param_index$" width="90"/>
+				</COLUMN>
+			</REPEAT>
+		</ROW>
+	</PNS_DASHED_GROUP_BOX>
+	<PNS_PLAIN_GROUP_BOX layout_type="column" v_margin="10" h_margin="10" opacity="1" id="distortion_type" h_position="150" v_position="0">
+	<COLUMN spacing="20">
+		<REPEAT count="3" start="5" index_name="param_index">
+			<COLUMN v_align="center" spacing="3">
+				<PARAM_TEXT param_id="custom_param$param_index$" content="{name}"  width="95" font_weight="bold" fit_text="abbreviate"/>
+				<COLUMN spacing="-20">
+					<PNS_SILVER_KNOB param_id="custom_param$param_index$" id="input_control$param_index$"/>
+					<PNS_DSP_PARAM_SETTINGS_BUTTON param_id="$script_input$param_index$$"/>
+				</COLUMN>
+				<PARAM_TEXT param_id="custom_param$param_index$" width="130"/>
+			</COLUMN>
+		</REPEAT>
+	</COLUMN>	
+	</PNS_PLAIN_GROUP_BOX>
+
+    <PNS_DASHED_GROUP_BOX layout_type="column" v_margin="20" h_margin="10" opacity="1" id="distortion threshold" h_position="310" v_position="0">
+	    <COLUMN spacing="10">
+		<REPEAT count="3" start="8" index_name="param_index">
+			<COLUMN v_align="center" spacing="3">
+				<PARAM_TEXT param_id="custom_param$param_index$" content="{name}"  width="95" font_weight="bold" fit_text="abbreviate"/>
+				<COLUMN spacing="-10">
+					<PNS_WHITE_STOVE_KNOB param_id="custom_param$param_index$" id="input_control$param_index$"/>
+					<PNS_DSP_PARAM_SETTINGS_BUTTON param_id="$script_input$param_index$$"/>
+				</COLUMN>
+				<PARAM_TEXT param_id="custom_param$param_index$" width="90"/>
+			</COLUMN>
+		</REPEAT>
+	    </COLUMN>
+	</PNS_DASHED_GROUP_BOX>
+	
+	<PNS_DASHED_GROUP_BOX layout_type="column" v_margin="10" h_margin="10" opacity="1" id="filter_paramter" h_position="675" v_position="-25">
+	<COLUMN spacing="10">
+		<REPEAT count="1" start="11" index_name="param_index">
+			<COLUMN v_align="center" spacing="3">
+				<PARAM_TEXT param_id="custom_param$param_index$" content="{name}"  width="95" font_weight="bold" fit_text="abbreviate"/>
+				<COLUMN spacing="-10">
+					<CUS_FADER param_id="custom_param$param_index$" id="input_control$param_index$"/>
+					<PNS_DSP_PARAM_SETTINGS_BUTTON param_id="$script_input$param_index$$"/>
+				</COLUMN>
+				<PARAM_TEXT param_id="custom_param$param_index$" width="90"/>
+			</COLUMN>
+		</REPEAT>
+	</COLUMN>
+	</PNS_DASHED_GROUP_BOX>
+    <PNS_DASHED_GROUP_BOX layout_type="column" v_margin="10" h_margin="10" opacity="1" id="filter_paramter" h_position="800" v_position="0">
+	<COLUMN spacing="10">
+		<REPEAT count="1" start="12" index_name="param_index">
+			<COLUMN v_align="center" spacing="3">
+				<PARAM_TEXT param_id="custom_param$param_index$" content="{name}"  width="95" font_weight="bold" fit_text="abbreviate"/>
+				<COLUMN spacing="-10">
+					<PNS_WHITE_STOVE_KNOB param_id="custom_param$param_index$" id="input_control$param_index$"/>
+					<PNS_DSP_PARAM_SETTINGS_BUTTON param_id="$script_input$param_index$$"/>
+				</COLUMN>
+				<PARAM_TEXT param_id="custom_param$param_index$" width="90"/>
+			</COLUMN>
+		</REPEAT>
+	</COLUMN>
+	</PNS_DASHED_GROUP_BOX>
+    <PNS_DASHED_GROUP_BOX layout_type="column" v_margin="10" h_margin="10" opacity="1" id="filter_paramter" h_position="800" v_position="125">
+	<COLUMN spacing="10">
+		<REPEAT count="2" start="13" index_name="param_index">
+			<COLUMN v_align="center" spacing="3">
+				<PARAM_TEXT param_id="custom_param$param_index$" content="{name}"  width="95" font_weight="bold" fit_text="abbreviate"/>
+				<COLUMN spacing="-10">
+					<PNS_WHITE_STOVE_KNOB param_id="custom_param$param_index$" id="input_control$param_index$"/>
+					<PNS_DSP_PARAM_SETTINGS_BUTTON param_id="$script_input$param_index$$"/>
+				</COLUMN>
+				<PARAM_TEXT param_id="custom_param$param_index$" width="90"/>
+			</COLUMN>
+		</REPEAT>
+	</COLUMN>
+	</PNS_DASHED_GROUP_BOX>
+
+    <PNS_DASHED_GROUP_BOX layout_type="row" v_margin="10" h_margin="10" opacity="1" id="filter_paramter" h_position="925" v_position="125">
+    <COLUMN spacing="10">
+		<REPEAT count="2" start="15" index_name="param_index">
+			<COLUMN v_align="center" spacing="3">
+				<PARAM_TEXT param_id="custom_param$param_index$" content="{name}"  width="95" font_weight="bold" fit_text="abbreviate"/>
+				<COLUMN spacing="-10">
+					<PNS_WHITE_STOVE_KNOB param_id="custom_param$param_index$" id="input_control$param_index$"/>
+					<PNS_DSP_PARAM_SETTINGS_BUTTON param_id="$script_input$param_index$$"/>
+				</COLUMN>
+				<PARAM_TEXT param_id="custom_param$param_index$" width="90"/>
+			</COLUMN>
+		</REPEAT>
+	</COLUMN>
+    <COLUMN spacing="10">
+		<REPEAT count="2" start="17" index_name="param_index">
+			<COLUMN v_align="center" spacing="3">
+				<PARAM_TEXT param_id="custom_param$param_index$" content="{name}"  width="95" font_weight="bold" fit_text="abbreviate"/>
+				<COLUMN spacing="-10">
+					<PNS_WHITE_STOVE_KNOB param_id="custom_param$param_index$" id="input_control$param_index$"/>
+					<PNS_DSP_PARAM_SETTINGS_BUTTON param_id="$script_input$param_index$$"/>
+				</COLUMN>
+				<PARAM_TEXT param_id="custom_param$param_index$" width="90"/>
+			</COLUMN>
+		</REPEAT>
+	</COLUMN>
+	</PNS_DASHED_GROUP_BOX>
+
+
+    <PNS_FILLED_GROUP_BOX layout_type="row" v_margin="10" h_margin="10" opacity="1" id="filter_paramter" h_position="925" v_position="0">
+        <ROW spacing="10">
+		    <REPEAT count="2" start="19" index_name="param_index">
+			    <COLUMN v_align="center" spacing="3">
+				    <PARAM_TEXT param_id="custom_param$param_index$" content="{name}"  width="95" font_weight="bold" fit_text="abbreviate"/>
+				    <COLUMN spacing="-10">
+					    <PNS_WHITE_STOVE_KNOB param_id="custom_param$param_index$" id="input_control$param_index$"/>
+					    <PNS_DSP_PARAM_SETTINGS_BUTTON param_id="$script_input$param_index$$"/>
+				    </COLUMN>
+				    <PARAM_TEXT param_id="custom_param$param_index$" width="90"/>
+			    </COLUMN>
+		    </REPEAT>
+	    </ROW>
+	</PNS_FILLED_GROUP_BOX>
+</LAYER_STACK>	
+</SKIN>
