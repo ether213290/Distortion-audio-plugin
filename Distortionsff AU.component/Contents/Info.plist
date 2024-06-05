@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>AudioComponents</key>
+	<array>
+		<dict>
+			<key>description</key>
+			<string>generate mutiple distortion effect</string>
+			<key>factoryFunction</key>
+			<string>AudioUnitPlugFactoryEntry</string>
+			<key>manufacturer</key>
+			<string>0076</string>
+			<key>name</key>
+			<string>Jiacheng Li: Distortionsff</string>
+			<key>subtype</key>
+			<string>0076</string>
+			<key>type</key>
+			<string>aumf</string>
+			<key>version</key>
+			<integer>65792</integer>
+		</dict>
+	</array>
+	<key>BuildMachineOSBuild</key>
+	<string>17G13035</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>Distortionsff AU</string>
+	<key>CFBundleGetInfoString</key>
+	<string>Distortionsff AU v.1.1.0 by Jiacheng Li (generate mutiple distortion effect)</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.jiachengli.distortionsffau</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundlePackageType</key>
+	<string>BNDL</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleSupportedPlatforms</key>
+	<array>
+		<string>MacOSX</string>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>1.1.0</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Jiacheng Li</string>
+</dict>
+</plist>
